@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/write_viewId"
+    tools:context=".WriteDataActivity">
+
+    <LinearLayout
+        android:id="@+id/linearTime"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/txtTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="时间："></TextView>
+
+        <EditText
+            android:id="@+id/editTime"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:layout_toRightOf="@id/txtTime">
+        </EditText>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/linearUser"
+        android:layout_below="@id/linearTime"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/txtUser"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="客户："></TextView>
+
+    <EditText
+        android:id="@+id/editUser"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:hint="输入姓名"
+        android:layout_toRightOf="@id/txtUser">
+    </EditText>
+
+    </LinearLayout>
+
+<LinearLayout
+    android:layout_below="@id/linearUser"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content">
+
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/scroll_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@id/linearUser"
+        android:orientation="vertical"
+        android:layout_alignParentTop="true"
+        android:background="#F5F5F5">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#F5F5F5">
+
+            <LinearLayout
+                android:id="@+id/ll_vip_num_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#F5F5F5">
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/ll_add_vip_num"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:layout_marginTop="1dp"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_default_item_selector"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:clickable="true">
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/item_add"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="添加发货物品"
+                    android:textColor="#2196F3"
+                    android:layout_marginLeft="12dp"/>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_alignParentBottom="true"
+        android:textSize="15sp">
+
+        <Button
+            android:id="@+id/btn_soonPrint"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_alignParentBottom="true"
+            android:textSize="15sp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_green_selector"
+            android:text="稍后打印" />
+        <Button
+            android:id="@+id/btn_yes"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_alignParentBottom="true"
+            android:textSize="15sp"
+            android:background="@drawable/bg_green_selector"
+            android:text="现在打印" />
+    </LinearLayout>
+</RelativeLayout>
