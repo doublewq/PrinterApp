@@ -24,6 +24,13 @@
         android:text="填写单据" />
 
     <Button
+        android:id="@+id/noPrintOrder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:text="打印队列" />
+
+    <Button
         android:id="@+id/historyData"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -22,6 +22,7 @@ import com.will.bluetoothprinterdemo.ui.BasePrintActivity;
 import com.will.bluetoothprinterdemo.utils.OrderSqliteUtil;
 import com.will.bluetoothprinterdemo.utils.PrintUtil;
 import com.will.bluetoothprinterdemo.utils.ProductSqliteUtil;
+import com.will.bluetoothprinterdemo.vo.Order;
 import com.will.bluetoothprinterdemo.vo.Product;
 
 import java.lang.reflect.Method;
@@ -41,16 +42,23 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
     private LinearLayout llVipNumContainer;
     private LinearLayout llAddVipNum;
     private Button btnYes;
+    private Button btnSoonPrint;
     private CreateUserPopWin createUserPopWin;
     private EditText editTime;
     private EditText editUser;
+    private EditText editPhone;
+
+    private List<Product> productLists;
+    private Order printOrder;
+
 
     @Override
     public void onConnected(BluetoothSocket socket, int taskType) {
         switch (taskType) {
             case TASK_TYPE_PRINT:
                 Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.test_image);
-                PrintUtil.printTest(socket, bitmap);
+//                PrintUtil.printTest(socket, bitmap);
+                PrintUtil.printOrder(socket, bitmap, printOrder, productLists);
                 break;
         }
     }
@@ -80,11 +88,13 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
 
     private void initView() {
         btnYes = (Button) findViewById(R.id.btn_yes);
+        btnSoonPrint = (Button) findViewById(R.id.btn_soonPrint);
         scrollView = (ScrollView) findViewById(R.id.scroll_view);
         llVipNumContainer = (LinearLayout) findViewById(R.id.ll_vip_num_container);
         llAddVipNum = (LinearLayout) findViewById(R.id.ll_add_vip_num);
         editTime = (EditText) findViewById(R.id.editTime);
         editUser = (EditText) findViewById(R.id.editUser);
+        editPhone = (EditText) findViewById(R.id.editPhone);
 
         Date currentTime = new Date();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -107,7 +117,7 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
                     String dataNumEdit = createUserPopWin.dataNumEdit.getText().toString().trim();
                     dataNumEdit = dataNumEdit.equals("") ? "1" : dataNumEdit;
                     String price = createUserPopWin.editPrice.getText().toString().trim();
-                    price = price.startsWith(".")?"1":price; //处理不合法输入
+                    price = price.startsWith(".") ? "1" : price; //处理不合法输入
                     price = price.equals("") ? "1" : price;
 
                     // 小计 小数点保留两位
@@ -120,12 +130,6 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
                     tvIndex.setText("\t" + name + "\t" + color + "\t" + dataNumEdit + "\t" + price + "￥" + "\t" + "小计:" + sumPrice);
                     createUserPopWin.dismiss();
                     break;
-                case R.id.isCancel:
-                    System.out.println("is cancel");
-                    final View viewItemLast = llVipNumContainer.getChildAt(llVipNumContainer.getChildCount() - 1);
-                    llVipNumContainer.removeView(viewItemLast);
-                    createUserPopWin.dismiss();
-                    break;
                 default:
                     break;
             }
@@ -133,7 +137,9 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
     };
 
     private void setListeners() {
+
         llAddVipNum.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View view) {
                 addViewItem();
@@ -142,28 +148,57 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
         });
 
         btnYes.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View v) {
-                List<Product> list = getDataList();
-                if (list==null || list.size() <= 0) {
+                productLists = getDataList();
+                if (productLists == null || productLists.size() <= 0) {
                     Toast.makeText(WriteDataActivity.this, "请添加要打印的商品!", Toast.LENGTH_SHORT).show();
                 } else {
                     //迁移打印命令
-                    connectDevice(TASK_TYPE_PRINT);
-                    StoreTODB(list);
+                    StoreTODB(productLists, 1); //先存储再打印，也可以哟
+                    try {
+                        connectDevice(TASK_TYPE_PRINT);
+                    } catch (Exception e) { //打印异常
+                        //先删除原来的，再添加
+                        DeleteFromDB(productLists.get(0).getOrderId());
+                        StoreTODB(productLists, 0); //未打印成功，则存储到打印队列中
+                    }
+                }
+            }
+        });
+
+        btnSoonPrint.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                List<Product> list = getDataList();
+                if (list == null || list.size() <= 0) {
+                    Toast.makeText(WriteDataActivity.this, "尚未添加要打印的商品!", Toast.LENGTH_SHORT).show();
+                } else {
+                    // 存储进待打印列表
+                    StoreTODB(list, 0);
+                    Toast.makeText(WriteDataActivity.this, "已加入打印队列!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
     }
 
-    private void StoreTODB(List<Product> list) {
-        if(list==null || list.size()==0){
+    private void DeleteFromDB(String orderId) {
+        OrderSqliteUtil dbUtil = new OrderSqliteUtil(this);
+        dbUtil.open();
+        dbUtil.delete(orderId);
+        dbUtil.close();
+    }
+
+    private void StoreTODB(List<Product> list, int isPrint) {
+        if (list == null || list.size() == 0) {
             return;
         }
         //存储订单
         String orderID = list.get(0).getOrderId();
-        String consumerName = editUser.getText().toString() == "" ? "VIP" : editUser.getText().toString();
-        String consumberPhone = "18888888888"; //后续扩展
+        String consumerName = editUser.getText().toString().trim().length() == 0 ? "VIP" : editUser.getText().toString();
+        String consumberPhone = editPhone.getText().toString().trim() == "" ? "18888888888" : editPhone.getText().toString();
         int productNum = list.size();
         double salary = 0.0;
         for (int i = 0; i < list.size(); i++) {
@@ -172,9 +207,10 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
         }
         double pay = 0.0;
         String time = editTime.getText().toString();
+        printOrder = new Order(0, orderID, consumerName, consumberPhone, productNum, salary, pay, time, isPrint);
         OrderSqliteUtil dbUtil = new OrderSqliteUtil(this);
         dbUtil.open();
-        dbUtil.insert(orderID,consumerName,consumberPhone,productNum,salary,pay,time);
+        dbUtil.insert(orderID, consumerName, consumberPhone, productNum, salary, pay, time, isPrint);
         dbUtil.close();
 
         //存储产品

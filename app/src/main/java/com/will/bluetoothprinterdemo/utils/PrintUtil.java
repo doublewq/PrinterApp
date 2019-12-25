@@ -1,15 +1,20 @@
 package com.will.bluetoothprinterdemo.utils;
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 
 import com.github.promeg.pinyinhelper.Pinyin;
+import com.will.bluetoothprinterdemo.vo.Order;
+import com.will.bluetoothprinterdemo.vo.Product;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.text.DecimalFormat;
+import java.util.List;
 
 /**
  * 蓝牙打印工具类
@@ -19,7 +24,7 @@ public class PrintUtil {
     private OutputStreamWriter mWriter = null;
     private OutputStream mOutputStream = null;
 
-    public final static int WIDTH_PIXEL = 384;
+    public final static int WIDTH_PIXEL = 576;//80mm热敏打印纸 // 58mm热敏打印纸的点密度384;
     public final static int IMAGE_SIZE = 320;
 
     /**
@@ -216,6 +221,61 @@ public class PrintUtil {
         print(byteBuffer);
     }
 
+    public void printFiveColumn(String left, String mid_lef, String middle, String mid_rig, String right) throws IOException {
+        int iNum = 0;
+        byte[] byteBuffer = new byte[300];
+        byte[] tmp = new byte[0];
+
+        System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
+        iNum += tmp.length;
+
+        tmp = getGbk(left);
+        System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
+        iNum += tmp.length;
+
+        int pixLength = getStringPixLength(left) % WIDTH_PIXEL;
+        if (pixLength > WIDTH_PIXEL / 2 || pixLength == 0) {
+            mid_lef = "\n\t\t" + mid_lef;
+        }
+
+        tmp = setLocation(200);
+        System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
+        iNum += tmp.length;
+
+        // 设置中间靠左的数据
+        tmp = getGbk(mid_lef);
+        System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
+        iNum += tmp.length;
+
+        tmp = setLocation(200+94);
+        System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
+        iNum += tmp.length;
+
+        // 设置中间的数据
+        tmp = getGbk(middle);
+        System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
+        iNum += tmp.length;
+
+        tmp = setLocation(200+94+94);
+        System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
+        iNum += tmp.length;
+
+        // 设置中间靠右的数据
+        tmp = getGbk(mid_rig);
+        System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
+        iNum += tmp.length;
+
+        tmp = setLocation(200+94+94+94);
+        System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
+        iNum += tmp.length;
+
+        // 设置最右边的数据
+        tmp = getGbk(right);
+        System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
+
+        print(byteBuffer);
+    }
+
     public void printDashLine() throws IOException {
         printText("--------------------------------");
     }
@@ -320,6 +380,92 @@ public class PrintUtil {
         targetCanvas.drawColor(0xffffffff);
         targetCanvas.drawBitmap(bitmapOrg, new Rect(0, 0, width, height), new Rect(0, 0, newWidth, newHeight), null);
         return targetBmp;
+    }
+
+    public static void printOrder(BluetoothSocket bluetoothSocket, Bitmap bitmap, Order order, List<Product> productList){
+        try {
+            PrintUtil pUtil = new PrintUtil(bluetoothSocket.getOutputStream(), "GBK");
+            // 店铺名 居中 放大
+            pUtil.printAlignment(1);
+            pUtil.printLargeText("温梦家纺");
+            pUtil.printLine();
+            pUtil.printAlignment(0);
+            pUtil.printLine();
+
+            // 打印头部信息
+            pUtil.printTwoColumn("客户:", order.getConsumerName());
+            pUtil.printLine();
+            pUtil.printTwoColumn("订单号:",order.getOrderID());
+            pUtil.printLine();
+            pUtil.printTwoColumn("下单时间:",order.getTime());
+            pUtil.printLine();
+
+            // 分隔线
+            pUtil.printDashLine();
+            pUtil.printLine();
+
+            //打印商品列表的头
+            pUtil.printText("商品");
+            pUtil.printTabSpace(2);
+            pUtil.printText("颜色");
+            pUtil.printTabSpace(1);
+            pUtil.printText("数量");
+            pUtil.printTabSpace(1);
+            pUtil.printText("单价");
+            pUtil.printTabSpace(1);
+            pUtil.printText("小计");
+            pUtil.printLine();
+
+            for (int i = 0; i < productList.size(); i++) {
+                Product product = productList.get(i);
+                // 小计 小数点保留两位
+                double sumPricedoub = (Integer.valueOf(product.getNumbers()) * Double.valueOf(product.getPrice()));
+                DecimalFormat formPrice = new DecimalFormat("#.00");
+                String sumPrice = formPrice.format(sumPricedoub);
+                pUtil.printFiveColumn(product.getName(),product.getColor(),product.getNumbers()+"",product.getPrice()+"",sumPrice);
+            }
+
+            //打印中间的订单数量和金额信息
+            pUtil.printDashLine();
+            pUtil.printLine();
+
+            pUtil.printTwoColumn("销售总数量:",order.getProductNum()+"");
+            pUtil.printLine();
+            pUtil.printTwoColumn("销售额总计:",order.getSalary()+"");
+            pUtil.printLine();
+
+            //打印中间的金额信息
+            pUtil.printDashLine();
+            pUtil.printLine();
+
+            pUtil.printTwoColumn("应付金额:",order.getSalary()+"");
+            pUtil.printLine();
+            pUtil.printTwoColumn("实收金额:",order.getHasPay()+"");
+            pUtil.printLine();
+            pUtil.printTwoColumn("欠款：",(order.getSalary()-order.getHasPay())+"");
+            pUtil.printLine();
+
+            //打印最下面的信息
+            pUtil.printDashLine();
+            pUtil.printLine();
+
+            pUtil.printTwoColumn("销售地址：","西安市锦绣家纺城西区39-40号");
+            pUtil.printLine();
+            pUtil.printTwoColumn("电话：","029-81038039");
+            pUtil.printLine();
+            pUtil.printTwoColumn("手机/微信：","13389288598");
+            pUtil.printLine();
+            pUtil.printTwoColumn("经营：","高中档被子、羽绒被、充绒被、夏凉被、枕芯、保健枕、荞麦养生枕。各种规格白毛、羊羔毛、水晶绒床垫。夏季大量生产销售麻将凉枕。");
+            pUtil.printLine();
+
+            //
+            pUtil.printDashLine();
+            pUtil.printBitmap(bitmap);
+            pUtil.printLine(4);
+
+        }catch (IOException e) {
+
+        }
     }
 
     public static void printTest(BluetoothSocket bluetoothSocket, Bitmap bitmap) {

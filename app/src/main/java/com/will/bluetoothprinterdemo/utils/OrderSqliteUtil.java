@@ -8,6 +8,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.will.bluetoothprinterdemo.vo.Order;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * sqlite 数据库操作类
  */
@@ -41,6 +46,7 @@ public class OrderSqliteUtil {
     public static final String KEY_SALARY = "salary";
     public static final String KEY_PAY = "hasPay";
     public static final String KEY_TIME = "time";
+    public static final String KEY_PRINT = "isPrint";
     /**
      * Database creation sql statement
      */
@@ -53,7 +59,8 @@ public class OrderSqliteUtil {
                     + KEY_PRONUM + " integer not null, "
                     + KEY_SALARY + " real, "
                     + KEY_PAY + " real, "
-                    + KEY_TIME + " text not null);";
+                    + KEY_TIME + " text not null, "
+                    + KEY_PRINT + " integer not null );";
     /**
      * Context
      */
@@ -68,6 +75,7 @@ public class OrderSqliteUtil {
         DatabaseHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
         }
+
         /**
          * onCreate method is called for the 1st time when database doesn't exists.
          */
@@ -118,17 +126,19 @@ public class OrderSqliteUtil {
 
     /**
      * This method is used to create/insert new record record.
+     *
      * @return long
      */
-    public long insert(String orderID, String consumerName, String consumerPhone, int productNum, double salary,double pay,String time) {
+    public long insert(String orderID, String consumerName, String consumerPhone, int productNum, double salary, double pay, String time, int isPrint) {
         ContentValues initialValues = new ContentValues();
         initialValues.put(KEY_ORDERID, orderID);
         initialValues.put(KEY_CONAME, consumerName);
         initialValues.put(KEY_CONPHONE, consumerPhone);
-        initialValues.put(KEY_PRONUM,productNum);
-        initialValues.put(KEY_SALARY,salary);
-        initialValues.put(KEY_PAY,pay);
-        initialValues.put(KEY_TIME,time);
+        initialValues.put(KEY_PRONUM, productNum);
+        initialValues.put(KEY_SALARY, salary);
+        initialValues.put(KEY_PAY, pay);
+        initialValues.put(KEY_TIME, time);
+        initialValues.put(KEY_PRINT, isPrint);
         return mDb.insert(DATABASE_TABLE, null, initialValues);
     }
 
@@ -138,7 +148,7 @@ public class OrderSqliteUtil {
      * @param
      * @return boolean
      */
-    public boolean delete(int orderId) {
+    public boolean delete(String orderId) {
         return mDb.delete(DATABASE_TABLE, KEY_ORDERID + "=" + orderId, null) > 0;
     }
 
@@ -157,8 +167,8 @@ public class OrderSqliteUtil {
      * @return Cursor
      */
     public Cursor fetchAll() {
-        return mDb.query(DATABASE_TABLE, new String[]{KEY_ORDERID, KEY_CONAME,KEY_CONPHONE,KEY_PRONUM,KEY_SALARY,
-                KEY_PAY,KEY_TIME}, null, null, null, null, null);
+        return mDb.query(DATABASE_TABLE, new String[]{KEY_ORDERID, KEY_CONAME, KEY_CONPHONE, KEY_PRONUM, KEY_SALARY,
+                KEY_PAY, KEY_TIME, KEY_PRINT}, null, null, null, null, null);
     }
 
     /**
@@ -170,8 +180,8 @@ public class OrderSqliteUtil {
      */
     public Cursor fetch(int orderID) throws SQLException {
         Cursor mCursor =
-                mDb.query(true, DATABASE_TABLE, new String[]{KEY_ID,KEY_ORDERID,KEY_CONAME,KEY_CONPHONE,KEY_PRONUM,
-                                KEY_SALARY,KEY_PAY,KEY_TIME}, KEY_ORDERID + "=" + orderID, null,
+                mDb.query(true, DATABASE_TABLE, new String[]{KEY_ID, KEY_ORDERID, KEY_CONAME, KEY_CONPHONE, KEY_PRONUM,
+                                KEY_SALARY, KEY_PAY, KEY_TIME, KEY_PRINT}, KEY_ORDERID + "=" + orderID, null,
                         null, null, null, null);
         if (mCursor != null) {
             mCursor.moveToFirst();
@@ -180,17 +190,51 @@ public class OrderSqliteUtil {
     }
 
     /**
+     * This method will return Cursor holding the list<order> record.
+     *
+     * @param isPrint
+     * @return
+     * @throws SQLException
+     */
+    public List<Order> fetchByisPrint(int isPrint) throws SQLException {
+        Cursor mCursor =
+                mDb.query(true, DATABASE_TABLE,
+                        new String[]{KEY_ID, KEY_ORDERID, KEY_CONAME, KEY_CONPHONE, KEY_PRONUM, KEY_SALARY, KEY_PAY, KEY_TIME, KEY_PRINT},
+                        KEY_PRINT + "=" + isPrint, null,
+                        null, null, KEY_ID, null);
+        List<Order> orders = new ArrayList<>();
+        //对游标 Cursor 的遍历
+        while (mCursor.moveToNext()) {
+            Order order = new Order();
+            order.setOrderID(mCursor.getString(1));
+            order.setConsumerName(mCursor.getString(2));
+            order.setConsumerPhone(mCursor.getString(3));
+            order.setProductNum(mCursor.getInt(4));
+            order.setSalary(mCursor.getDouble(5));
+            order.setHasPay(mCursor.getDouble(6));
+            order.setTime(mCursor.getString(7));
+            order.setIsPrint(mCursor.getInt(8));
+
+            orders.add(order);
+        }
+        mCursor.close();
+        return orders;
+    }
+
+    /**
      * This method will update record.
+     *
      * @return boolean
      */
-    public boolean update(String orderID, String consumerName, String consumerPhone, int productNum, double salary,double pay,String time) {
+    public boolean update(String orderID, String consumerName, String consumerPhone, int productNum, double salary, double pay, String time, int isPrint) {
         ContentValues args = new ContentValues();
         args.put(KEY_CONAME, consumerName);
         args.put(KEY_CONPHONE, consumerPhone);
-        args.put(KEY_PRONUM,productNum);
-        args.put(KEY_SALARY,salary);
-        args.put(KEY_PAY,pay);
-        args.put(KEY_TIME,time);
+        args.put(KEY_PRONUM, productNum);
+        args.put(KEY_SALARY, salary);
+        args.put(KEY_PAY, pay);
+        args.put(KEY_TIME, time);
+        args.put(KEY_PRINT, isPrint);
         return mDb.update(DATABASE_TABLE, args, KEY_ORDERID + "=" + orderID, null) > 0;
     }
 }

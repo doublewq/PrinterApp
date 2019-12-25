@@ -10,10 +10,20 @@ public class Order {
     private double hasPay;
     private String time;
 
+    public int getIsPrint() {
+        return isPrint;
+    }
+
+    public void setIsPrint(int isPrint) {
+        this.isPrint = isPrint;
+    }
+
+    private int isPrint;
+
     public Order() {
     }
 
-    public Order(int id, String orderID, String consumerName, String consumerPhone, int productNum, double salary, double hasPay, String time) {
+    public Order(int id, String orderID, String consumerName, String consumerPhone, int productNum, double salary, double hasPay, String time, int isPrint) {
         this.id = id;
         this.orderID = orderID;
         this.consumerName = consumerName;
@@ -22,6 +32,7 @@ public class Order {
         this.salary = salary;
         this.hasPay = hasPay;
         this.time = time;
+        this.isPrint = isPrint;
     }
 
     public int getId() {
@@ -99,6 +110,7 @@ public class Order {
                 ", salary=" + salary +
                 ", hasPay=" + hasPay +
                 ", time='" + time + '\'' +
+                ", isPrint=" + isPrint +
                 '}';
     }
 }
