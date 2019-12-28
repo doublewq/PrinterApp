@@ -178,21 +178,46 @@ public class OrderSqliteUtil {
      * @return Cursor
      * @throws SQLException
      */
-    public Cursor fetch(int orderID) throws SQLException {
+    public int fetch(String orderID) throws SQLException {
         Cursor mCursor =
                 mDb.query(true, DATABASE_TABLE, new String[]{KEY_ID, KEY_ORDERID, KEY_CONAME, KEY_CONPHONE, KEY_PRONUM,
                                 KEY_SALARY, KEY_PAY, KEY_TIME, KEY_PRINT}, KEY_ORDERID + "=" + orderID, null,
                         null, null, null, null);
-        if (mCursor != null) {
-            mCursor.moveToFirst();
+        if(mCursor!=null && mCursor.getCount()>0){
+            return 1;
         }
-        return mCursor;
+        return 0;
+    }
+
+    public List<Order> fetchByisPrintAndDESC(int isPrint) throws SQLException{
+        Cursor mCursor =
+                mDb.query(true, DATABASE_TABLE,
+                        new String[]{KEY_ID, KEY_ORDERID, KEY_CONAME, KEY_CONPHONE, KEY_PRONUM, KEY_SALARY, KEY_PAY, KEY_TIME, KEY_PRINT},
+                        KEY_PRINT + "=" + isPrint, null,
+                        null, null, KEY_ID + " DESC", "50");
+        List<Order> orders = new ArrayList<>();
+        //对游标 Cursor 的遍历
+        while (mCursor.moveToNext()) {
+            Order order = new Order();
+            order.setOrderID(mCursor.getString(1));
+            order.setConsumerName(mCursor.getString(2));
+            order.setConsumerPhone(mCursor.getString(3));
+            order.setProductNum(mCursor.getInt(4));
+            order.setSalary(mCursor.getDouble(5));
+            order.setHasPay(mCursor.getDouble(6));
+            order.setTime(mCursor.getString(7));
+            order.setIsPrint(mCursor.getInt(8));
+
+            orders.add(order);
+        }
+        mCursor.close();
+        return orders;
     }
 
     /**
      * This method will return Cursor holding the list<order> record.
      *
-     * @param isPrint
+     * @param isPrint 0 代表未打印，1代表已打印
      * @return
      * @throws SQLException
      */
@@ -235,6 +260,18 @@ public class OrderSqliteUtil {
         args.put(KEY_PAY, pay);
         args.put(KEY_TIME, time);
         args.put(KEY_PRINT, isPrint);
+        return mDb.update(DATABASE_TABLE, args, KEY_ORDERID + "=" + orderID, null) > 0;
+    }
+
+    public boolean updateToHasPrint(String orderID) {
+        ContentValues args = new ContentValues();
+        args.put(KEY_PRINT, 1);
+        return mDb.update(DATABASE_TABLE, args, KEY_ORDERID + "=" + orderID, null) > 0;
+    }
+
+    public boolean updateToNoPrint(String orderID) {
+        ContentValues args = new ContentValues();
+        args.put(KEY_PRINT, 0);
         return mDb.update(DATABASE_TABLE, args, KEY_ORDERID + "=" + orderID, null) > 0;
     }
 }

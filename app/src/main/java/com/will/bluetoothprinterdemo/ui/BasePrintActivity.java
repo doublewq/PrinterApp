@@ -8,16 +8,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
 
-import com.will.bluetoothprinterdemo.R;
 import com.will.bluetoothprinterdemo.utils.BluetoothUtil;
-import com.will.bluetoothprinterdemo.utils.PrintUtil;
 
 import java.io.IOException;
 
@@ -139,9 +135,9 @@ public abstract  class BasePrintActivity extends AppCompatActivity {
         protected void onPostExecute(BluetoothSocket socket) {
             mProgressDialog.dismiss();
             if (socket == null || !socket.isConnected()) {
-                toast("连接打印机失败");
+                toast("连接蓝牙打印机失败");
             } else {
-                toast("成功！");
+                toast("打印完成喽！");
             }
 
             super.onPostExecute(socket);

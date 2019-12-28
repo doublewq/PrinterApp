@@ -3,6 +3,7 @@ package com.will.bluetoothprinterdemo;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.drawable.BitmapDrawable;
 import android.view.Display;
 import android.view.LayoutInflater;

@@ -1,5 +1,9 @@
 package com.will.bluetoothprinterdemo;
 
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,14 +14,21 @@ import android.widget.CompoundButton;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.will.bluetoothprinterdemo.ui.BasePrintActivity;
+import com.will.bluetoothprinterdemo.utils.BluetoothUtil;
 import com.will.bluetoothprinterdemo.utils.OrderSqliteUtil;
+import com.will.bluetoothprinterdemo.utils.PrintUtil;
+import com.will.bluetoothprinterdemo.utils.ProductSqliteUtil;
 import com.will.bluetoothprinterdemo.vo.Model;
 import com.will.bluetoothprinterdemo.vo.Order;
+import com.will.bluetoothprinterdemo.vo.Product;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class NoPrintActivity extends AppCompatActivity {
+public class NoPrintActivity extends BasePrintActivity {
+
+    final static int TASK_TYPE_PRINT = 2;
 
     private Button btnPrint;
     private ListView mListView;
@@ -26,6 +37,40 @@ public class NoPrintActivity extends AppCompatActivity {
     private MyAdapter mMyAdapter;
     //监听来源
     public boolean mIsFromItem = false;
+
+    private List<Order> orderLists;
+
+    @Override
+    public void onConnected(BluetoothSocket socket, int taskType) {
+        switch (taskType) {
+            case TASK_TYPE_PRINT:
+                Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.erweima);
+                for (int i = 0; i < orderLists.size(); i++) {
+                    Order printOrder = orderLists.get(i);
+                    List<Product> productLists = getProductListsFromDB(printOrder.getOrderID());
+                    PrintUtil.printOrder(socket, bitmap, printOrder, productLists);
+                    //打印完更新订单状态为已打印状态
+                    deleteFromDB(printOrder.getOrderID());
+                }
+//                mMyAdapter.notifyDataSetChanged();
+                break;
+        }
+    }
+
+    private void deleteFromDB(String orderID) {
+        OrderSqliteUtil dbUtil = new OrderSqliteUtil(this);
+        dbUtil.open();
+        dbUtil.updateToHasPrint(orderID);
+        dbUtil.close();
+    }
+
+    private List<Product> getProductListsFromDB(String orderID) {
+        ProductSqliteUtil dbUtil = new ProductSqliteUtil(this);
+        dbUtil.open();
+        List<Product> products = dbUtil.fetchByOrderID(orderID);
+        dbUtil.close();
+        return products;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,21 +87,33 @@ public class NoPrintActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 StringBuilder sb = new StringBuilder();
-                List<Order> orderPrint = new ArrayList<>();
-                if(models!=null && models.size()>0){
+                orderLists = new ArrayList<>();
+                if (models != null && models.size() > 0) {
                     for (int i = 0; i < models.size(); i++) {
-                        if(models.get(i).isIscheck()){
-                            orderPrint.add(models.get(i).getOrder());
-                            sb.append(models.get(i).getOrder().getConsumerName()+",");
+                        if (models.get(i).isIscheck()) {
+                            orderLists.add(models.get(i).getOrder());
+                            sb.append(models.get(i).getOrder().getConsumerName() + ",");
                         }
                     }
                 }
-                //获取到了订单，接下来就是获取产品并打印了，将在writeDataActivity里面试验后迁移过来
-
-                Toast.makeText(NoPrintActivity.this, "一会就打印喽！"+sb, Toast.LENGTH_SHORT).show();
+                // 开始打印喽！
+                connectDevice(TASK_TYPE_PRINT);
+                Toast.makeText(NoPrintActivity.this, "打印完喽！" + sb, Toast.LENGTH_SHORT).show();
             }
         });
     }
+
+    public void connectDevice(int taskType) {
+        List<BluetoothDevice> devices = BluetoothUtil.getPairedPrinterDevices();
+        if (devices.size() > 0) {
+            BluetoothDevice device = devices.get(0);
+            if (device != null)
+                super.connectDevice(device, taskType);
+        } else {
+            Toast.makeText(this, "请前往打印机页面连接打印机", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     /**
      * view初始化
      */
@@ -74,7 +131,7 @@ public class NoPrintActivity extends AppCompatActivity {
         models = new ArrayList<>();
         OrderSqliteUtil dbUtil = new OrderSqliteUtil(this);
         dbUtil.open();
-        List<Order> orders = dbUtil.fetchByisPrint(0);
+        List<Order> orders = dbUtil.fetchByisPrint(0);  //0代表未打印
         for (int i = 0; i < orders.size(); i++) {
             Model model = new Model();
             model.setOrder(orders.get(i));

@@ -43,7 +43,6 @@ public class PrinterSettingActivity extends BasePrintActivity implements View.On
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_printer_setting);
         initViews();
-        AFactory.printerActivity = this;
     }
 
     @Override

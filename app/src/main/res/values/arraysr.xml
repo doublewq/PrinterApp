@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="colors">
+        <item> 红色 </item>
+        <item> 白色 </item>
+        <item> 黑色 </item>
+        <item> 花色 </item>
+        <item> 大红色 </item>
+    </string-array>
+
+    <string-array name="products">
+        <item>决明子明目枕</item>
+        <item>浪琴决明子枕 </item>
+        <item>中号定型荞麦</item>
+        <item>1.5羊羔毛床垫</item>
+        <item>花边小米单价</item>
+        <item>浪琴决明子枕</item>
+    </string-array>
+</resources>

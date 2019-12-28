@@ -45,7 +45,7 @@ public class MyAdapter extends BaseAdapter {
         if (view == null) {
             hd = new ViewHoder();
             LayoutInflater layoutInflater = LayoutInflater.from(context);
-            view = layoutInflater.inflate(R.layout.item_order_history, null);
+            view = layoutInflater.inflate(R.layout.item_order_noprint, null);
             hd.textView = (TextView) view.findViewById(R.id.txt_htitle);
             hd.checkBox = (CheckBox) view.findViewById(R.id.cxk_his);
             view.setTag(hd);

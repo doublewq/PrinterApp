@@ -8,6 +8,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.will.bluetoothprinterdemo.vo.Product;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class ProductSqliteUtil {
     private static final String TAG = "ProductDatabaseUtil";
 
@@ -122,7 +127,7 @@ public class ProductSqliteUtil {
      */
     public long insert(String orderID, String name, String color, int number, double price) {
         ContentValues initialValues = new ContentValues();
-        initialValues.put(KEY_ORDERID,orderID);
+        initialValues.put(KEY_ORDERID, orderID);
         initialValues.put(KEY_NAME, name);
         initialValues.put(KEY_COLOR, color);
         initialValues.put(KEY_NUMBERS, number);
@@ -174,6 +179,23 @@ public class ProductSqliteUtil {
             mCursor.moveToFirst();
         }
         return mCursor;
+    }
+
+    public List<Product> fetchByOrderID(String orderID) throws SQLException {
+        Cursor mCursor =
+                mDb.query(true, DATABASE_TABLE, new String[]{KEY_ID, KEY_ORDERID, KEY_NAME, KEY_COLOR, KEY_NUMBERS, KEY_PRICE}, KEY_ORDERID + "=" + orderID, null,
+                        null, null, null, null);
+        List<Product> products = new ArrayList<>();
+        while (mCursor.moveToNext()) {
+            Product product = new Product();
+            product.setOrderId(mCursor.getString(1));
+            product.setName(mCursor.getString(2));
+            product.setColor(mCursor.getString(3));
+            product.setNumbers(mCursor.getInt(4));
+            product.setPrice(mCursor.getDouble(5));
+            products.add(product);
+        }
+        return products;
     }
 
     /**

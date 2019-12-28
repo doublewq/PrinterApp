@@ -1,9 +1,8 @@
 package com.will.bluetoothprinterdemo;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSocket;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -19,20 +18,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.will.bluetoothprinterdemo.ui.BasePrintActivity;
+import com.will.bluetoothprinterdemo.utils.BluetoothUtil;
 import com.will.bluetoothprinterdemo.utils.OrderSqliteUtil;
 import com.will.bluetoothprinterdemo.utils.PrintUtil;
 import com.will.bluetoothprinterdemo.utils.ProductSqliteUtil;
 import com.will.bluetoothprinterdemo.vo.Order;
 import com.will.bluetoothprinterdemo.vo.Product;
 
-import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 public class WriteDataActivity extends BasePrintActivity implements View.OnClickListener {
 
@@ -51,13 +49,11 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
     private List<Product> productLists;
     private Order printOrder;
 
-
     @Override
     public void onConnected(BluetoothSocket socket, int taskType) {
         switch (taskType) {
             case TASK_TYPE_PRINT:
-                Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.test_image);
-//                PrintUtil.printTest(socket, bitmap);
+                Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.erweima);
                 PrintUtil.printOrder(socket, bitmap, printOrder, productLists);
                 break;
         }
@@ -70,7 +66,6 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
                 System.out.println("is cancel");
                 final View viewItemLast = llVipNumContainer.getChildAt(llVipNumContainer.getChildCount() - 1);
                 llVipNumContainer.removeView(viewItemLast);
-//                    System.out.println("is cancel");
                 createUserPopWin.dismiss();
                 break;
             default:
@@ -156,13 +151,13 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
                     Toast.makeText(WriteDataActivity.this, "请添加要打印的商品!", Toast.LENGTH_SHORT).show();
                 } else {
                     //迁移打印命令
+                    //解决重复点击打印，order数据库中出现重复order
                     StoreTODB(productLists, 1); //先存储再打印，也可以哟
                     try {
                         connectDevice(TASK_TYPE_PRINT);
                     } catch (Exception e) { //打印异常
-                        //先删除原来的，再添加
-                        DeleteFromDB(productLists.get(0).getOrderId());
-                        StoreTODB(productLists, 0); //未打印成功，则存储到打印队列中
+                        //更新为未打印状态
+                        updateToNoPrintFromDB(productLists.get(0).getOrderId());
                     }
                 }
             }
@@ -177,25 +172,40 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
                     Toast.makeText(WriteDataActivity.this, "尚未添加要打印的商品!", Toast.LENGTH_SHORT).show();
                 } else {
                     // 存储进待打印列表
-                    StoreTODB(list, 0);
-                    Toast.makeText(WriteDataActivity.this, "已加入打印队列!", Toast.LENGTH_SHORT).show();
+                    if (!orderDBHasThisOrder(list.get(0).getOrderId())) {
+                        StoreTODB(list, 0);
+                        Toast.makeText(WriteDataActivity.this, "已加入待打印队列!", Toast.LENGTH_SHORT).show();
+                    }
+                    Toast.makeText(WriteDataActivity.this, "请勿重复加入待打印队列!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
     }
 
-    private void DeleteFromDB(String orderId) {
+    // 判断数据库中是否已存在这个订单
+    private boolean orderDBHasThisOrder(String orderId) {
         OrderSqliteUtil dbUtil = new OrderSqliteUtil(this);
         dbUtil.open();
-        dbUtil.delete(orderId);
+        int ans = dbUtil.fetch(orderId);
+        dbUtil.close();
+        System.out.println(ans);
+        return ans == 0 ? false : true;
+    }
+
+    private void updateToNoPrintFromDB(String orderId) {
+        OrderSqliteUtil dbUtil = new OrderSqliteUtil(this);
+        dbUtil.open();
+        dbUtil.updateToNoPrint(orderId);
         dbUtil.close();
     }
 
+    // 当订单id不存在于order表时，才加入order中
     private void StoreTODB(List<Product> list, int isPrint) {
         if (list == null || list.size() == 0) {
             return;
         }
         //存储订单
+        boolean flag_isExist = false;
         String orderID = list.get(0).getOrderId();
         String consumerName = editUser.getText().toString().trim().length() == 0 ? "VIP" : editUser.getText().toString();
         String consumberPhone = editPhone.getText().toString().trim() == "" ? "18888888888" : editPhone.getText().toString();
@@ -210,56 +220,34 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
         printOrder = new Order(0, orderID, consumerName, consumberPhone, productNum, salary, pay, time, isPrint);
         OrderSqliteUtil dbUtil = new OrderSqliteUtil(this);
         dbUtil.open();
-        dbUtil.insert(orderID, consumerName, consumberPhone, productNum, salary, pay, time, isPrint);
+        if (dbUtil.fetch(orderID) == 0) {
+            dbUtil.insert(orderID, consumerName, consumberPhone, productNum, salary, pay, time, isPrint);
+            flag_isExist = true;
+        }
         dbUtil.close();
 
-        //存储产品
-        ProductSqliteUtil pdbUtil = new ProductSqliteUtil(this);
-        pdbUtil.open();
-        for (int i = 0; i < list.size(); i++) {
-            Product product = list.get(i);
-            System.out.println(product.toString());
-            pdbUtil.insert(product.getOrderId(), product.getName(), product.getColor(), product.getNumbers(), product.getPrice());
+        if(!flag_isExist){
+            //存储产品
+            ProductSqliteUtil pdbUtil = new ProductSqliteUtil(this);
+            pdbUtil.open();
+            for (int i = 0; i < list.size(); i++) {
+                Product product = list.get(i);
+                System.out.println(product.toString());
+                pdbUtil.insert(product.getOrderId(), product.getName(), product.getColor(), product.getNumbers(), product.getPrice());
+            }
+            pdbUtil.close();
         }
-        pdbUtil.close();
     }
 
     public void connectDevice(int taskType) {
-        List<BluetoothDevice> devices = getConnectBt();
+        List<BluetoothDevice> devices = BluetoothUtil.getPairedPrinterDevices();
         if (devices.size() > 0) {
             BluetoothDevice device = devices.get(0);
             if (device != null)
                 super.connectDevice(device, taskType);
         } else {
-            Toast.makeText(this, "订单已加入稍后打印队列！\r\n请前往打印机页面连接打印机", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "请前往打印机页面连接打印机", Toast.LENGTH_SHORT).show();
         }
-    }
-
-    //检查已连接的蓝牙设备
-    private List<BluetoothDevice> getConnectBt() {
-        List<BluetoothDevice> deviceList = new ArrayList<>();
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        Class<BluetoothAdapter> bluetoothAdapterClass = BluetoothAdapter.class;//得到BluetoothAdapter的Class对象
-        try {//得到连接状态的方法
-            Method method = bluetoothAdapterClass.getDeclaredMethod("getConnectionState", (Class[]) null);
-            //打开权限
-            method.setAccessible(true);
-            int state = (int) method.invoke(adapter, (Object[]) null);
-            if (state == BluetoothAdapter.STATE_CONNECTED) {
-                Set<BluetoothDevice> devices = adapter.getBondedDevices();
-                for (BluetoothDevice device : devices) {
-                    Method isConnectedMethod = BluetoothDevice.class.getDeclaredMethod("isConnected", (Class[]) null);
-                    method.setAccessible(true);
-                    boolean isConnected = (boolean) isConnectedMethod.invoke(device, (Object[]) null);
-                    if (isConnected) {
-                        deviceList.add(device);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return deviceList;
     }
 
     /**

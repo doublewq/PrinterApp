@@ -41,6 +41,7 @@ public class PrintUtil {
 
     public void print(byte[] bs) throws IOException {
         mOutputStream.write(bs);
+        mOutputStream.flush();
     }
 
     public void printRawBytes(byte[] bytes) throws IOException {
@@ -150,17 +151,48 @@ public class PrintUtil {
         mWriter.write(0x1b);
         mWriter.write(0x61);
         mWriter.write(alignment);
+        mWriter.flush();
     }
 
     public void printLargeText(String text) throws IOException {
 
-        mWriter.write(0x1b);
-        mWriter.write(0x21);
-        mWriter.write(48);
+        mWriter.write(29); //0x1B
+        mWriter.write(33); //0x21
+        mWriter.write(35);
 
         mWriter.write(text);
 
-        mWriter.write(0x1b);
+        mWriter.write(29);
+        mWriter.write(33);
+        mWriter.write(0);
+
+        mWriter.flush();
+    }
+
+    public void printTestFont(int n, String text) throws IOException {
+
+        mWriter.write(29); //0x1B
+        mWriter.write(33); //0x21
+        mWriter.write(n);
+
+        mWriter.write(text);
+
+        mWriter.write(29);
+        mWriter.write(33);
+        mWriter.write(0);
+
+        mWriter.flush();
+    }
+
+    public void printMidText(String text) throws IOException {
+
+        mWriter.write(0x1B);
+        mWriter.write(0x21);
+        mWriter.write(0X08);
+
+        mWriter.write(text);
+
+        mWriter.write(0x1B);
         mWriter.write(0x21);
         mWriter.write(0);
 
@@ -169,14 +201,17 @@ public class PrintUtil {
 
     public void printTwoColumn(String title, String content) throws IOException {
         int iNum = 0;
-        byte[] byteBuffer = new byte[100];
-        byte[] tmp;
+        byte[] byteBuffer = new byte[300];
+        byte[] tmp = new byte[0];
+
+        System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
+        iNum += tmp.length;
 
         tmp = getGbk(title);
         System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
         iNum += tmp.length;
 
-        tmp = setLocation(getOffset(content));
+        tmp = setLocation(getStringPixLength(title));
         System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
         iNum += tmp.length;
 
@@ -184,6 +219,7 @@ public class PrintUtil {
         System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
 
         print(byteBuffer);
+        mWriter.flush();
     }
 
     public void printThreeColumn(String left, String middle, String right) throws IOException {
@@ -223,7 +259,7 @@ public class PrintUtil {
 
     public void printFiveColumn(String left, String mid_lef, String middle, String mid_rig, String right) throws IOException {
         int iNum = 0;
-        byte[] byteBuffer = new byte[300];
+        byte[] byteBuffer = new byte[400];
         byte[] tmp = new byte[0];
 
         System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
@@ -247,7 +283,7 @@ public class PrintUtil {
         System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
         iNum += tmp.length;
 
-        tmp = setLocation(200+94);
+        tmp = setLocation(200 + 94);
         System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
         iNum += tmp.length;
 
@@ -256,7 +292,7 @@ public class PrintUtil {
         System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
         iNum += tmp.length;
 
-        tmp = setLocation(200+94+94);
+        tmp = setLocation(200 + 94 + 94);
         System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
         iNum += tmp.length;
 
@@ -265,7 +301,7 @@ public class PrintUtil {
         System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
         iNum += tmp.length;
 
-        tmp = setLocation(200+94+94+94);
+        tmp = setLocation(200 + 94 + 94 + 94);
         System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
         iNum += tmp.length;
 
@@ -274,10 +310,11 @@ public class PrintUtil {
         System.arraycopy(tmp, 0, byteBuffer, iNum, tmp.length);
 
         print(byteBuffer);
+        mWriter.flush();
     }
 
     public void printDashLine() throws IOException {
-        printText("--------------------------------");
+        printText("----------------------------------------------");
     }
 
     public void printBitmap(Bitmap bmp) throws IOException {
@@ -382,11 +419,26 @@ public class PrintUtil {
         return targetBmp;
     }
 
-    public static void printOrder(BluetoothSocket bluetoothSocket, Bitmap bitmap, Order order, List<Product> productList){
+//    public static void printOrder(BluetoothSocket bluetoothSocket, Bitmap bitmap, Order order, List<Product> productList) {
+//        try {
+//            PrintUtil  pUtil = new PrintUtil(bluetoothSocket.getOutputStream(), "GBK");
+//            for (int i = 30; i < 60; i++) {
+//                pUtil.printTestFont(i,"温梦家纺");
+//                if(i%8==0){
+//                    pUtil.printLine();
+//                }
+//            }
+//        }catch (IOException e){
+//
+//        }
+//    }
+
+    public static void printOrder(BluetoothSocket bluetoothSocket, Bitmap bitmap, Order order, List<Product> productList) {
         try {
             PrintUtil pUtil = new PrintUtil(bluetoothSocket.getOutputStream(), "GBK");
             // 店铺名 居中 放大
             pUtil.printAlignment(1);
+            pUtil.printLine();
             pUtil.printLargeText("温梦家纺");
             pUtil.printLine();
             pUtil.printAlignment(0);
@@ -395,9 +447,9 @@ public class PrintUtil {
             // 打印头部信息
             pUtil.printTwoColumn("客户:", order.getConsumerName());
             pUtil.printLine();
-            pUtil.printTwoColumn("订单号:",order.getOrderID());
+            pUtil.printTwoColumn("订单号:", order.getOrderID());
             pUtil.printLine();
-            pUtil.printTwoColumn("下单时间:",order.getTime());
+            pUtil.printTwoColumn("下单时间:", order.getTime());
             pUtil.printLine();
 
             // 分隔线
@@ -405,69 +457,70 @@ public class PrintUtil {
             pUtil.printLine();
 
             //打印商品列表的头
-            pUtil.printText("商品");
+            pUtil.printMidText("商品");
             pUtil.printTabSpace(2);
-            pUtil.printText("颜色");
+            pUtil.printMidText("颜色");
             pUtil.printTabSpace(1);
-            pUtil.printText("数量");
+            pUtil.printMidText("数量");
             pUtil.printTabSpace(1);
-            pUtil.printText("单价");
+            pUtil.printMidText("单价");
             pUtil.printTabSpace(1);
-            pUtil.printText("小计");
+            pUtil.printMidText("小计");
             pUtil.printLine();
 
             for (int i = 0; i < productList.size(); i++) {
                 Product product = productList.get(i);
                 // 小计 小数点保留两位
-                double sumPricedoub = (Integer.valueOf(product.getNumbers()) * Double.valueOf(product.getPrice()));
+                double sumPricedoub = (1.0 * Integer.valueOf(product.getNumbers()) * Double.valueOf(product.getPrice()));
                 DecimalFormat formPrice = new DecimalFormat("#.00");
                 String sumPrice = formPrice.format(sumPricedoub);
-                pUtil.printFiveColumn(product.getName(),product.getColor(),product.getNumbers()+"",product.getPrice()+"",sumPrice);
+                System.out.println(sumPrice);
+                pUtil.printFiveColumn(product.getName(), product.getColor(), product.getNumbers() + "", product.getPrice() + "", sumPrice);
+                pUtil.printLine();
             }
 
             //打印中间的订单数量和金额信息
             pUtil.printDashLine();
             pUtil.printLine();
 
-            pUtil.printTwoColumn("销售总数量:",order.getProductNum()+"");
+            pUtil.printTwoColumn("销售总数量:", order.getProductNum() + "");
             pUtil.printLine();
-            pUtil.printTwoColumn("销售额总计:",order.getSalary()+"");
+            pUtil.printTwoColumn("销售额总计:", order.getSalary() + "");
             pUtil.printLine();
 
             //打印中间的金额信息
             pUtil.printDashLine();
             pUtil.printLine();
 
-            pUtil.printTwoColumn("应付金额:",order.getSalary()+"");
+            pUtil.printTwoColumn("应付金额:", order.getSalary() + "");
             pUtil.printLine();
-            pUtil.printTwoColumn("实收金额:",order.getHasPay()+"");
+            pUtil.printTwoColumn("实收金额:", order.getHasPay() + "");
             pUtil.printLine();
-            pUtil.printTwoColumn("欠款：",(order.getSalary()-order.getHasPay())+"");
+            pUtil.printTwoColumn("欠款：", (order.getSalary() - order.getHasPay()) + "");
             pUtil.printLine();
 
             //打印最下面的信息
             pUtil.printDashLine();
             pUtil.printLine();
 
-            pUtil.printTwoColumn("销售地址：","西安市锦绣家纺城西区39-40号");
+            pUtil.printTwoColumn("销售地址：", "西安市锦绣家纺城西区39-40号");
             pUtil.printLine();
-            pUtil.printTwoColumn("电话：","029-81038039");
+            pUtil.printTwoColumn("电话：", "029-81038039");
             pUtil.printLine();
-            pUtil.printTwoColumn("手机/微信：","13389288598");
+            pUtil.printTwoColumn("手机/微信：", "13389288598");
             pUtil.printLine();
-            pUtil.printTwoColumn("经营：","高中档被子、羽绒被、充绒被、夏凉被、枕芯、保健枕、荞麦养生枕。各种规格白毛、羊羔毛、水晶绒床垫。夏季大量生产销售麻将凉枕。");
+            pUtil.printTwoColumn("经营：", "高中档被子、羽绒被、充绒被、夏凉被、枕芯、保健枕、荞麦养生枕。各种规格白毛、羊羔毛、水晶绒床垫。夏季大量生产销售麻将凉枕。");
             pUtil.printLine();
 
             //
             pUtil.printDashLine();
-            pUtil.printBitmap(bitmap);
-            pUtil.printLine(4);
+//            pUtil.printBitmap(bitmap);
+            pUtil.printLine(5);
 
-        }catch (IOException e) {
+        } catch (IOException e) {
 
         }
     }
-
     public static void printTest(BluetoothSocket bluetoothSocket, Bitmap bitmap) {
 
         try {
@@ -479,7 +532,7 @@ public class PrintUtil {
             pUtil.printAlignment(0);
             pUtil.printLine();
 
-            pUtil.printTwoColumn("时间:", "2017-05-09 15:50:41");
+            pUtil.printTwoColumn("时间:", "2019-05-09 15:50:41");
             pUtil.printLine();
 
             pUtil.printTwoColumn("订单号:", System.currentTimeMillis() + "");
@@ -491,6 +544,7 @@ public class PrintUtil {
             // 分隔线
             pUtil.printDashLine();
             pUtil.printLine();
+
 
             //打印商品列表
             pUtil.printText("商品");
