@@ -14,12 +14,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProductSqliteUtil {
-    private static final String TAG = "ProductDatabaseUtil";
+    private static final String TAG = "OrderProductDatabaseUtil";
 
     /**
      * Database Name
      */
-    private static final String DATABASE_NAME = "product_data";
+    private static final String DATABASE_NAME = "order_product_data";
 
     /**
      * Database Version
@@ -29,7 +29,7 @@ public class ProductSqliteUtil {
     /**
      * Table Name
      */
-    private static final String DATABASE_TABLE = "tb_product";
+    private static final String DATABASE_TABLE = "tb_orderproduct";
 
     /**
      * Table columns

@@ -39,7 +39,25 @@
             android:layout_alignParentBottom="true"
             android:layout_weight="1"
             android:background="@drawable/bg_green_selector"
-            android:text="打印"
+            android:text="打印一份"
+            android:textSize="20dp" />
+        <Button
+            android:id="@+id/btn_historyPrintTWO"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_alignParentBottom="true"
+            android:layout_weight="1"
+            android:background="@drawable/bt_shape_900"
+            android:text="打印两份"
+            android:textSize="20dp" />
+        <Button
+            android:id="@+id/btn_historyPrintTHREE"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_alignParentBottom="true"
+            android:layout_weight="1"
+            android:background="@drawable/bt_shape_9999"
+            android:text="打印三份"
             android:textSize="20dp" />
     </LinearLayout>
 </RelativeLayout>

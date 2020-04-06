@@ -1,6 +1,5 @@
 package com.will.bluetoothprinterdemo.utils;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -25,7 +24,8 @@ public class PrintUtil {
     private OutputStream mOutputStream = null;
 
     public final static int WIDTH_PIXEL = 576;//80mm热敏打印纸 // 58mm热敏打印纸的点密度384;
-    public final static int IMAGE_SIZE = 320;
+    public final static int IMAGE_WIDTH = 500;
+    public final static int IMAGE_SIZE = 250;
 
     /**
      * 初始化Pos实例
@@ -151,6 +151,14 @@ public class PrintUtil {
         mWriter.write(0x1b);
         mWriter.write(0x61);
         mWriter.write(alignment);
+        mWriter.flush();
+    }
+
+    // 切纸
+    public void cutPaper() throws IOException {
+        mWriter.write(0x1d);
+        mWriter.write(0x56);
+        mWriter.write(00);
         mWriter.flush();
     }
 
@@ -410,7 +418,7 @@ public class PrintUtil {
         int width = bitmapOrg.getWidth();
         int height = bitmapOrg.getHeight();
         // 定义预转换成的图片的宽度和高度
-        int newWidth = IMAGE_SIZE;
+        int newWidth = IMAGE_WIDTH;
         int newHeight = IMAGE_SIZE;
         Bitmap targetBmp = Bitmap.createBitmap(newWidth, newHeight, Bitmap.Config.ARGB_8888);
         Canvas targetCanvas = new Canvas(targetBmp);
@@ -441,11 +449,17 @@ public class PrintUtil {
             pUtil.printLine();
             pUtil.printLargeText("温梦家纺");
             pUtil.printLine();
+            pUtil.printLine();
+            pUtil.printMidText("销售清单");
+            pUtil.printLine();
             pUtil.printAlignment(0);
             pUtil.printLine();
 
             // 打印头部信息
-            pUtil.printTwoColumn("客户:", order.getConsumerName());
+            String[] phoneAndBeizhu = order.getConsumerPhone().split("\\t");
+            pUtil.printMidText("客户: " + order.getConsumerName() + "  电话：" + phoneAndBeizhu[0]);
+            pUtil.printLine();
+            pUtil.printMidText("备注: " + phoneAndBeizhu[1]);
             pUtil.printLine();
             pUtil.printTwoColumn("订单号:", order.getOrderID());
             pUtil.printLine();
@@ -494,33 +508,55 @@ public class PrintUtil {
 
             pUtil.printTwoColumn("应付金额:", order.getSalary() + "");
             pUtil.printLine();
-            pUtil.printTwoColumn("实收金额:", order.getHasPay() + "");
+            String getMoney = "未付款";
+            if (order.getHasPay() - 1.0 < 1e-10) {
+                getMoney = "微信支付";
+            } else if (order.getHasPay() - 2.0 < 1e-10) {
+                getMoney = "支付宝支付";
+            } else if (order.getHasPay() - 3.0 < 1e-10) {
+                getMoney = "现金支付";
+            }
+            if(order.getHasPay()-0.0 < 1e-10){
+                getMoney = "未付款";
+            }
+            pUtil.printTwoColumn("实收金额:", getMoney.equals("未付款") ? order.getHasPay() + "" : getMoney + order.getSalary());
             pUtil.printLine();
-            pUtil.printTwoColumn("欠款：", (order.getSalary() - order.getHasPay()) + "");
+            pUtil.printTwoColumn("欠款：", getMoney.equals("未付款") ? order.getSalary() + "" : "已支付");
             pUtil.printLine();
 
             //打印最下面的信息
             pUtil.printDashLine();
             pUtil.printLine();
 
-            pUtil.printTwoColumn("销售地址：", "西安市锦绣家纺城西区39-40号");
+            pUtil.printMidText("联系人: 温栋良");
             pUtil.printLine();
             pUtil.printTwoColumn("电话：", "029-81038039");
             pUtil.printLine();
-            pUtil.printTwoColumn("手机/微信：", "13389288598");
+            pUtil.printTwoColumn("手机/微信：", "13389288598   18049024201");
             pUtil.printLine();
-            pUtil.printTwoColumn("经营：", "高中档被子、羽绒被、充绒被、夏凉被、枕芯、保健枕、荞麦养生枕。各种规格白毛、羊羔毛、水晶绒床垫。夏季大量生产销售麻将凉枕。");
+            pUtil.printTwoColumn("销售地址：", "西安市锦绣家纺城西区39-40号");
+            pUtil.printLine();
+            pUtil.printTwoColumn("农行：", "6228 4502 1000 2404 011  温栋良");
+            pUtil.printLine();
+            pUtil.printTwoColumn("工行：", "6222 0237 0001 6460 166  温栋良");
             pUtil.printLine();
 
-            //
+            // 打印二维码
             pUtil.printDashLine();
-//            pUtil.printBitmap(bitmap);
+            pUtil.printBitmap(bitmap);
+
+            // 加微信字
+            pUtil.printAlignment(1);
+            pUtil.printMidText("扫一扫，加我微信     扫一扫，向我付款");
             pUtil.printLine(5);
+            // 切纸
+            pUtil.cutPaper();
 
         } catch (IOException e) {
 
         }
     }
+
     public static void printTest(BluetoothSocket bluetoothSocket, Bitmap bitmap) {
 
         try {
@@ -568,12 +604,9 @@ public class PrintUtil {
 
             pUtil.printTwoColumn("找零:", "2.00");
             pUtil.printLine();
-
             pUtil.printDashLine();
-
             pUtil.printBitmap(bitmap);
-
-            pUtil.printLine(4);
+            pUtil.printLine(2);
 
         } catch (IOException e) {
 

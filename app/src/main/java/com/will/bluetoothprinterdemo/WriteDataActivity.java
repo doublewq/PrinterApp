@@ -2,17 +2,25 @@ package com.will.bluetoothprinterdemo;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.database.Cursor;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ListPopupWindow;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +30,8 @@ import com.will.bluetoothprinterdemo.utils.BluetoothUtil;
 import com.will.bluetoothprinterdemo.utils.OrderSqliteUtil;
 import com.will.bluetoothprinterdemo.utils.PrintUtil;
 import com.will.bluetoothprinterdemo.utils.ProductSqliteUtil;
+import com.will.bluetoothprinterdemo.utils.SqliteCustomerUtil;
+import com.will.bluetoothprinterdemo.vo.Customer;
 import com.will.bluetoothprinterdemo.vo.Order;
 import com.will.bluetoothprinterdemo.vo.Product;
 
@@ -32,7 +42,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
-public class WriteDataActivity extends BasePrintActivity implements View.OnClickListener {
+public class WriteDataActivity extends BasePrintActivity {
 
     final static int TASK_TYPE_PRINT = 2;
 
@@ -45,9 +55,16 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
     private EditText editTime;
     private EditText editUser;
     private EditText editPhone;
+    private EditText editMoney;
+    private EditText editBeizhu;
+
+    private RadioGroup rg_pay;
+    private String paymentMethod;
 
     private List<Product> productLists;
     private Order printOrder;
+    private List<Customer> customersList;
+
 
     @Override
     public void onConnected(BluetoothSocket socket, int taskType) {
@@ -59,19 +76,19 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
         }
     }
 
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.isCancel:
-                System.out.println("is cancel");
-                final View viewItemLast = llVipNumContainer.getChildAt(llVipNumContainer.getChildCount() - 1);
-                llVipNumContainer.removeView(viewItemLast);
-                createUserPopWin.dismiss();
-                break;
-            default:
-                break;
-        }
-    }
+//    @Override
+//    public void onClick(View v) {
+//        switch (v.getId()) {
+//            case R.id.isCancel:
+//                System.out.println("is cancel");
+//                final View viewItemLast = llVipNumContainer.getChildAt(llVipNumContainer.getChildCount() - 1);
+//                llVipNumContainer.removeView(viewItemLast);
+//                createUserPopWin.dismiss();
+//                break;
+//            default:
+//                break;
+//        }
+//    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,10 +96,49 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
         setContentView(R.layout.activity_write_data);
         initView();
         setListeners();
+        initRaidoGroup();
+    }
+
+    private int position = -1;
+    private void initRaidoGroup() {
+        rg_pay = (RadioGroup) findViewById(R.id.rg_horizontal_demo);
+        for (int i = 0; i < rg_pay.getChildCount(); i++) {
+            final RadioButton radioButton = (RadioButton) rg_pay.getChildAt(i);
+            final int finalI = i;
+            //监听RadioButton的点击事件
+            radioButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    rg_pay.clearCheck();
+                    //记录选中按钮文字的变量
+                    String result = "";
+                    //判断记录的值是否和点击的索引值是否相同
+                    if (position == finalI) {//相同：点击的是同一个RadioButton执行以下逻辑
+                        radioButton.setChecked(false);//设置RadioButton选中状态为false
+                        position = -1;//初始化position的值
+                        result = "";//初始化result的值
+                    } else {//不同：点击的是不同RadioButton
+                        radioButton.setChecked(true);////设置RadioButton选中状态为true
+                        position = finalI;//为position赋值
+                        result = (String) radioButton.getText();//为result赋值
+                    }
+                    paymentMethod = result;
+                }
+            });
+        }
+//        rg_pay.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+//            @Override
+//            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+//                RadioButton rb_temp = (RadioButton) findViewById(radioGroup.getCheckedRadioButtonId());
+//                paymentMethod = rb_temp.getText().toString();
+//                System.out.println(paymentMethod+"pay--------------");
+////                Toast.makeText(WriteDataActivity.this, String.format("你选择了%s", rb_temp.getText().toString()), Toast.LENGTH_SHORT).show();
+//            }
+//        });
     }
 
     private void initView() {
-        btnYes = (Button) findViewById(R.id.btn_yes);
+//        btnYes = (Button) findViewById(R.id.btn_yes);
         btnSoonPrint = (Button) findViewById(R.id.btn_soonPrint);
         scrollView = (ScrollView) findViewById(R.id.scroll_view);
         llVipNumContainer = (LinearLayout) findViewById(R.id.ll_vip_num_container);
@@ -90,11 +146,73 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
         editTime = (EditText) findViewById(R.id.editTime);
         editUser = (EditText) findViewById(R.id.editUser);
         editPhone = (EditText) findViewById(R.id.editPhone);
+        editMoney = (EditText) findViewById(R.id.editMoney);
+        editBeizhu = (EditText) findViewById(R.id.editBeizhu);
 
         Date currentTime = new Date();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String dateString = formatter.format(currentTime);
         editTime.setText(dateString);
+
+        // 初始化客户姓名
+        editUser.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (hasFocus) {
+                    showListPopulWindow(); //调用显示PopuWindow 函数
+                }
+            }
+        });  //对edit 进行焦点监听
+    }
+
+    private void showListPopulWindow() {
+//        final String[] list = {"汉城店", "大悟店", "谷城店", "竹溪店", "竹山店", "十堰店", "房县店", "岐山店", "镇原店",
+//                "陇县店", "铜川店", "山阳店", "咸阳一店", "咸阳二店", "城固一店", "城固二店", "商洛店", "长安店",
+//                "杨建群一店", "杨建群二店", "米脂衣世界", "三桥衣世界", "十里铺衣世界", "邓文斌衣世界", "贵阳荔波店", "勉县店(林希)",
+//                "四川开江点(林希)", "贵州玉屏店(林希)", "衣佳汇二店(谭敏刚)", "柞水店(谭敏刚)", "陕西衣都汇1店", "陕西衣都汇2店", "陕西衣都汇3店", "陕西衣都汇5店"};//要填充的数据
+        // 取得数据库中的客户姓名
+        SqliteCustomerUtil dbUtil = new SqliteCustomerUtil(this);
+        dbUtil.open();
+        customersList = dbUtil.fetchAll();
+        dbUtil.close();
+        String[] resOfCus = new String[customersList.size()];
+        int index = 0;
+        for (Customer customer : customersList) {
+            resOfCus[index++] = customer.getName();
+        }
+        final String[] list = resOfCus;
+
+        final ListPopupWindow listPopupWindow;
+        listPopupWindow = new ListPopupWindow(this);
+        listPopupWindow.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, list));//用android内置布局，或设计自己的样式
+        listPopupWindow.setAnchorView(editUser);//以哪个控件为基准，在该处以mEditText为基准
+        listPopupWindow.setModal(true);
+
+        listPopupWindow.setOnItemClickListener(new AdapterView.OnItemClickListener() {//设置项点击监听
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                editUser.setText(list[i]);//把选择的选项内容展示在EditText上
+                String afterPhone = "";
+                String afterBeizhu = "";
+                for(Customer customer : customersList){
+                    if(list[i].equals(customer.getName())){
+                        afterPhone = customer.getPhone();
+                        afterBeizhu = customer.getBeizhu();
+                    }
+                }
+                editPhone.setText(afterPhone);
+                editBeizhu.setText(afterBeizhu);
+                listPopupWindow.dismiss();//如果已经选择了，隐藏起来
+            }
+        });
+        listPopupWindow.show();//把ListPopWindow展示出来
+    }
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event){
+        if(createUserPopWin!=null&&createUserPopWin.isShowing()){
+            return false;
+        }
+        return super.dispatchTouchEvent(event);
     }
 
     public void showEditPopWin(WriteDataActivity view, String result) {
@@ -102,6 +220,7 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
         createUserPopWin.showAtLocation(findViewById(R.id.write_viewId), Gravity.CENTER, 0, 0);
     }
 
+    private double currentMoney = 0.0;
     private View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -122,8 +241,12 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
 
                     final View viewItem = llVipNumContainer.getChildAt(llVipNumContainer.getChildCount() - 1);
                     TextView tvIndex = (TextView) viewItem.findViewById(R.id.et_vip_number);
-                    tvIndex.setText("\t" + name + "\t" + color + "\t" + dataNumEdit + "\t" + price + "￥" + "\t" + "小计:" + sumPrice);
-                    createUserPopWin.dismiss();
+                    if(name.length()>0 && dataNumEdit.length()>0){
+                        tvIndex.setText("\t" + name + "\t" + color + "\t" + dataNumEdit + "\t" + price + "￥" + "\t" + "小计:" + sumPrice);
+                        currentMoney += sumPricedoub;
+                        editMoney.setText(formPrice.format(currentMoney));
+                        createUserPopWin.dismiss();
+                    }
                     break;
                 default:
                     break;
@@ -131,8 +254,25 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
         }
     };
 
-    private void setListeners() {
+    private void showCoverDialog(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("提示");
+        builder.setMessage("确认开单？");
+        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
 
+            }
+        });
+        builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+            }
+        });
+        builder.show();
+    }
+
+    private void setListeners() {
         llAddVipNum.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -142,41 +282,62 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
             }
         });
 
-        btnYes.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                productLists = getDataList();
-                if (productLists == null || productLists.size() <= 0) {
-                    Toast.makeText(WriteDataActivity.this, "请添加要打印的商品!", Toast.LENGTH_SHORT).show();
-                } else {
-                    //迁移打印命令
-                    //解决重复点击打印，order数据库中出现重复order
-                    StoreTODB(productLists, 1); //先存储再打印，也可以哟
-                    try {
-                        connectDevice(TASK_TYPE_PRINT);
-                    } catch (Exception e) { //打印异常
-                        //更新为未打印状态
-                        updateToNoPrintFromDB(productLists.get(0).getOrderId());
-                    }
-                }
-            }
-        });
+//        btnYes.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                productLists = getDataList();
+//                if (productLists == null || productLists.size() <= 0) {
+//                    Toast.makeText(WriteDataActivity.this, "请添加要打印的商品!", Toast.LENGTH_SHORT).show();
+//                } else {
+//                    //迁移打印命令
+//                    //解决重复点击打印，order数据库中出现重复order
+//                    if (!orderDBHasThisOrder(productLists.get(0).getOrderId())) {
+//                        StoreTODB(productLists, 1); //先存储再打印，也可以哟
+//                    }
+//                    try {
+//                        connectDevice(TASK_TYPE_PRINT);
+//                    } catch (Exception e) { //打印异常
+//                        //更新为未打印状态
+//                        updateToNoPrintFromDB(productLists.get(0).getOrderId());
+//                    }
+//                }
+//            }
+//        });
 
         btnSoonPrint.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                List<Product> list = getDataList();
-                if (list == null || list.size() <= 0) {
+                productLists = getDataList();
+                if (productLists == null || productLists.size() <= 0) {
                     Toast.makeText(WriteDataActivity.this, "尚未添加要打印的商品!", Toast.LENGTH_SHORT).show();
                 } else {
-                    // 存储进待打印列表
-                    if (!orderDBHasThisOrder(list.get(0).getOrderId())) {
-                        StoreTODB(list, 0);
-                        Toast.makeText(WriteDataActivity.this, "已加入待打印队列!", Toast.LENGTH_SHORT).show();
-                    }
-                    Toast.makeText(WriteDataActivity.this, "请勿重复加入待打印队列!", Toast.LENGTH_SHORT).show();
+                    // 确认窗口
+                    AlertDialog.Builder builder = new AlertDialog.Builder(WriteDataActivity.this);
+                    builder.setTitle("提示");
+                    builder.setMessage("确认生成订单？");
+                    builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            // 存储进待打印列表
+                            StoreTODB(productLists, 0);
+                            // 跳转到订单页面
+                            Intent intent = new Intent(WriteDataActivity.this, NoPrintActivity.class);
+                            startActivity(intent);
+                        }
+                    });
+                    builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                        }
+                    });
+                    builder.show();
+//                    if (!orderDBHasThisOrder(productLists.get(0).getOrderId())) {
+//                        StoreTODB(productLists, 0);
+//                        Toast.makeText(WriteDataActivity.this, "已加入待打印队列!", Toast.LENGTH_SHORT).show();
+//                    }
+//                    Toast.makeText(WriteDataActivity.this, "请勿重复加入待打印队列!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -188,7 +349,7 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
         dbUtil.open();
         int ans = dbUtil.fetch(orderId);
         dbUtil.close();
-        System.out.println(ans);
+//        System.out.println(ans);
         return ans == 0 ? false : true;
     }
 
@@ -205,38 +366,46 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
             return;
         }
         //存储订单
-        boolean flag_isExist = false;
         String orderID = list.get(0).getOrderId();
         String consumerName = editUser.getText().toString().trim().length() == 0 ? "VIP" : editUser.getText().toString();
-        String consumberPhone = editPhone.getText().toString().trim() == "" ? "18888888888" : editPhone.getText().toString();
-        int productNum = list.size();
+        String consumberPhone = editPhone.getText().toString().trim() == "" ? "***" : editPhone.getText().toString();
+        String Beizhu = editBeizhu.getText().toString();
+        consumberPhone+=" \t "+Beizhu;
+        int productNum = 0;
         double salary = 0.0;
         for (int i = 0; i < list.size(); i++) {
             Product product = list.get(i);
             salary += (1.0 * product.getNumbers() * product.getPrice());
+            productNum += product.getNumbers();
         }
-        double pay = 0.0;
+        double pay = 0.0;  //已支付金额 1.0代表用微信支付完了
+        if("微信".equals(paymentMethod)){
+            pay = 1.0;
+        }else if("支付宝".equals(paymentMethod)){
+            pay = 2.0;
+        }else if("现金".equals(paymentMethod)){
+            pay = 3.0;
+        }
+        System.out.println(paymentMethod+"--------------payment----------"+pay);
         String time = editTime.getText().toString();
         printOrder = new Order(0, orderID, consumerName, consumberPhone, productNum, salary, pay, time, isPrint);
         OrderSqliteUtil dbUtil = new OrderSqliteUtil(this);
         dbUtil.open();
         if (dbUtil.fetch(orderID) == 0) {
             dbUtil.insert(orderID, consumerName, consumberPhone, productNum, salary, pay, time, isPrint);
-            flag_isExist = true;
         }
         dbUtil.close();
 
-        if(!flag_isExist){
-            //存储产品
-            ProductSqliteUtil pdbUtil = new ProductSqliteUtil(this);
-            pdbUtil.open();
-            for (int i = 0; i < list.size(); i++) {
-                Product product = list.get(i);
-                System.out.println(product.toString());
-                pdbUtil.insert(product.getOrderId(), product.getName(), product.getColor(), product.getNumbers(), product.getPrice());
-            }
-            pdbUtil.close();
+        //存储产品
+        ProductSqliteUtil pdbUtil = new ProductSqliteUtil(this);
+        pdbUtil.open();
+        for (int i = 0; i < list.size(); i++) {
+            Product product = list.get(i);
+//            System.out.println(product.toString());
+            pdbUtil.insert(product.getOrderId(), product.getName(), product.getColor(), product.getNumbers(), product.getPrice());
         }
+        pdbUtil.close();
+
     }
 
     public void connectDevice(int taskType) {
@@ -280,6 +449,14 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
                 @Override
                 public void onClick(View v) {
                     llVipNumContainer.removeView(viewItem);
+                    TextView textView = (TextView) viewItem.findViewById(R.id.et_vip_number);
+                    if(textView.getText().toString().length()>0){
+                        String[] products = textView.getText().toString().split("\\t");
+                        double money = Double.valueOf(products[5].substring(3, products[5].length()));
+                        currentMoney -= money;
+                        DecimalFormat formPrice = new DecimalFormat("#.00");
+                        editMoney.setText(formPrice.format(currentMoney));
+                    }
                     sortViewItem();
                 }
             });
@@ -289,8 +466,18 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
                 @Override
                 public void onClick(View v) {
                     llVipNumContainer.removeView(viewItem);
-                    addViewItem();
-                    showEditPopWin(WriteDataActivity.this, tvItem.getText().toString());
+                    TextView textView = (TextView) v.findViewById(R.id.et_vip_number);
+                    String bianjiContent = textView.getText().toString();
+                    if(bianjiContent.length()>0){
+                        String[] products = bianjiContent.split("\\t");
+                        double money = Double.valueOf(products[5].substring(3, products[5].length()));
+                        currentMoney -= money;
+                        DecimalFormat formPrice = new DecimalFormat("#.00");
+                        editMoney.setText(formPrice.format(currentMoney));
+                        addViewItem();
+                        showEditPopWin(WriteDataActivity.this, bianjiContent);
+                        System.out.println("选中行编辑完毕");
+                    }
                 }
             });
         }
@@ -338,6 +525,4 @@ public class WriteDataActivity extends BasePrintActivity implements View.OnClick
         }
         return result;
     }
-
-
 }

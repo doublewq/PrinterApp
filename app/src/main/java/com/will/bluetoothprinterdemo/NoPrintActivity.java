@@ -2,8 +2,10 @@ package com.will.bluetoothprinterdemo;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -30,7 +32,10 @@ public class NoPrintActivity extends BasePrintActivity {
 
     final static int TASK_TYPE_PRINT = 2;
 
+    private int printNumber = 1;
     private Button btnPrint;
+    private Button btnPrintTWO;
+    private Button btnPrintTHREE;
     private ListView mListView;
     private List<Model> models;
     private CheckBox mMainCkb;
@@ -45,14 +50,20 @@ public class NoPrintActivity extends BasePrintActivity {
         switch (taskType) {
             case TASK_TYPE_PRINT:
                 Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.erweima);
-                for (int i = 0; i < orderLists.size(); i++) {
-                    Order printOrder = orderLists.get(i);
-                    List<Product> productLists = getProductListsFromDB(printOrder.getOrderID());
-                    PrintUtil.printOrder(socket, bitmap, printOrder, productLists);
-                    //打印完更新订单状态为已打印状态
-                    deleteFromDB(printOrder.getOrderID());
-                }
+                for (int k = 0; k < printNumber; k++) {
+                    for (int i = 0; i < orderLists.size(); i++) {
+                        Order printOrder = orderLists.get(i);
+                        List<Product> productLists = getProductListsFromDB(printOrder.getOrderID());
+                        if (productLists.size() > 0) {
+                            System.out.println(productLists.get(0).toString());
+                        }
+                        PrintUtil.printOrder(socket, bitmap, printOrder, productLists);
+                        //打印完更新订单状态为已打印状态
+//                    deleteFromDB(printOrder.getOrderID());
+                    }
 //                mMyAdapter.notifyDataSetChanged();
+                }
+
                 break;
         }
     }
@@ -86,19 +97,81 @@ public class NoPrintActivity extends BasePrintActivity {
         btnPrint.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                printNumber = 1;
                 StringBuilder sb = new StringBuilder();
                 orderLists = new ArrayList<>();
                 if (models != null && models.size() > 0) {
                     for (int i = 0; i < models.size(); i++) {
                         if (models.get(i).isIscheck()) {
                             orderLists.add(models.get(i).getOrder());
-                            sb.append(models.get(i).getOrder().getConsumerName() + ",");
+//                            sb.append(models.get(i).getOrder().getConsumerName() + ",");
                         }
                     }
                 }
-                // 开始打印喽！
-                connectDevice(TASK_TYPE_PRINT);
-                Toast.makeText(NoPrintActivity.this, "打印完喽！" + sb, Toast.LENGTH_SHORT).show();
+                if (orderLists != null && orderLists.size() > 0) {
+                    // 连接打印机 开始打印喽！
+                    try {
+                        connectDevice(TASK_TYPE_PRINT);
+                    } catch (Exception e) {
+                        Toast.makeText(NoPrintActivity.this, "打印机连接异常", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(NoPrintActivity.this, "请选择要打印的订单", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        btnPrintTWO.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                printNumber = 2;
+                StringBuilder sb = new StringBuilder();
+                orderLists = new ArrayList<>();
+                if (models != null && models.size() > 0) {
+                    for (int i = 0; i < models.size(); i++) {
+                        if (models.get(i).isIscheck()) {
+                            orderLists.add(models.get(i).getOrder());
+//                            sb.append(models.get(i).getOrder().getConsumerName() + ",");
+                        }
+                    }
+                }
+                if (orderLists != null && orderLists.size() > 0) {
+                    // 连接打印机 开始打印喽！
+                    try {
+                        connectDevice(TASK_TYPE_PRINT);
+                    } catch (Exception e) {
+                        Toast.makeText(NoPrintActivity.this, "打印机连接异常", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(NoPrintActivity.this, "请选择要打印的订单", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        btnPrintTHREE.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                printNumber = 3;
+                StringBuilder sb = new StringBuilder();
+                orderLists = new ArrayList<>();
+                if (models != null && models.size() > 0) {
+                    for (int i = 0; i < models.size(); i++) {
+                        if (models.get(i).isIscheck()) {
+                            orderLists.add(models.get(i).getOrder());
+//                            sb.append(models.get(i).getOrder().getConsumerName() + ",");
+                        }
+                    }
+                }
+                if (orderLists != null && orderLists.size() > 0) {
+                    // 连接打印机 开始打印喽！
+                    try {
+                        connectDevice(TASK_TYPE_PRINT);
+                    } catch (Exception e) {
+                        Toast.makeText(NoPrintActivity.this, "打印机连接异常", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(NoPrintActivity.this, "请选择要打印的订单", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -121,6 +194,8 @@ public class NoPrintActivity extends BasePrintActivity {
         mListView = (ListView) findViewById(R.id.list_hisOrder);
         mMainCkb = (CheckBox) findViewById(R.id.ckb_history);
         btnPrint = (Button) findViewById(R.id.btn_historyPrint);
+        btnPrintTWO = (Button) findViewById(R.id.btn_historyPrintTWO);
+        btnPrintTHREE = (Button) findViewById(R.id.btn_historyPrintTHREE);
     }
 
     /**
@@ -131,7 +206,8 @@ public class NoPrintActivity extends BasePrintActivity {
         models = new ArrayList<>();
         OrderSqliteUtil dbUtil = new OrderSqliteUtil(this);
         dbUtil.open();
-        List<Order> orders = dbUtil.fetchByisPrint(0);  //0代表未打印
+        List<Order> orders = dbUtil.fetchByisPrintAndDESC(0);  //0代表未打印
+//        System.out.println("order+__________"+orders.size()+orders.get(0).getIsPrint());
         for (int i = 0; i < orders.size(); i++) {
             Model model = new Model();
             model.setOrder(orders.get(i));

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".AddCustomerActivity"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/txtTitle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="#4CAF50"
+        android:gravity="center"
+        android:padding="5dp"
+        android:text="添加VIP客户"
+        android:textColor="#ffffff"
+        android:textSize="20sp" />
+
+    <LinearLayout
+        android:id="@+id/linerkh"
+        android:layout_below="@id/txtTitle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/txtCuName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="客户名："></TextView>
+
+        <EditText
+            android:id="@+id/editCuName"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/txtCuName"></EditText>
+    </LinearLayout>
+
+    // 客户电话
+    <LinearLayout
+        android:id="@+id/linearCuPhone"
+        android:layout_below="@+id/linerkh"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/txtCuPhone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="电话号："></TextView>
+
+        <EditText
+            android:id="@+id/editCuPhone"
+            android:layout_width="200dp"
+            android:inputType="number"
+            android:maxLength="11"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/txtCuPhone"></EditText>
+    </LinearLayout>
+
+    // 备注
+    <LinearLayout
+        android:id="@+id/linearCuBeiZhu"
+        android:layout_below="@+id/linearCuPhone"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/txtCuBeiZhu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" 备 注："></TextView>
+
+        <EditText
+            android:id="@+id/editCuBeiZhu"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/txtCuBeiZhu">
+        </EditText>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_alignParentBottom="true"
+        android:textSize="20dp">
+        <Button
+            android:id="@+id/btn_addCustomer"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_alignParentBottom="true"
+            android:layout_weight="1"
+            android:background="@drawable/bg_green_selector"
+            android:text="添加客户"
+            android:textSize="20dp" />
+    </LinearLayout>
+</RelativeLayout>

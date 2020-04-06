@@ -10,6 +10,9 @@ import android.widget.TextView;
 
 import com.will.bluetoothprinterdemo.vo.Model;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 public class MyAdapter extends BaseAdapter {
@@ -52,7 +55,15 @@ public class MyAdapter extends BaseAdapter {
         }
         Model mModel = data.get(i);
         hd = (ViewHoder) view.getTag();
-        hd.textView.setText(mModel.getOrder().getOrderID()+"\t 客户:"+mModel.getOrder().getConsumerName());
+        String timecur = mModel.getOrder().getTime().substring(0,8);
+        DateFormat format1= new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        DateFormat format2= new SimpleDateFormat("yyyy年MM月dd日 HH时mm分");
+        try{
+            Date time = format1.parse(mModel.getOrder().getTime());
+            timecur = format2.format(time);
+        }catch (Exception e){
+        }
+        hd.textView.setText(timecur+"\t"+mModel.getOrder().getConsumerName()+"\t"+mModel.getOrder().getSalary()+"￥");
 
         final ViewHoder hdFinal = hd;
         hd.checkBox.setChecked(mModel.isIscheck());

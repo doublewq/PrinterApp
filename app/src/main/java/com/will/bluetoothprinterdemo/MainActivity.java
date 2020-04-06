@@ -19,8 +19,35 @@ public class MainActivity extends AppCompatActivity {
         kcBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent kcI = new Intent(MainActivity.this, PrinterSettingActivity.class);
+                Intent kcI = new Intent(MainActivity.this, AddProductsActivity.class);
                 startActivity(kcI);
+            }
+        });
+
+        Button addCustomer = (Button) findViewById(R.id.btn_addCustomer);
+        addCustomer.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent addcus = new Intent(MainActivity.this, AddCustomerActivity.class);
+                startActivity(addcus);
+            }
+        });
+
+        final Button upCustomerbutton = (Button) findViewById(R.id.updateCustomer);
+        upCustomerbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent write = new Intent(MainActivity.this, UpdateCustomerActivity.class);
+                startActivity(write);
+            }
+        });
+
+        final Button updatebutton = (Button) findViewById(R.id.updateProduct);
+        updatebutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent write = new Intent(MainActivity.this, UpdateProductActivity.class);
+                startActivity(write);
             }
         });
 
@@ -32,6 +59,8 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(write);
             }
         });
+
+
 
         final Button noPrintButn = (Button) findViewById(R.id.noPrintOrder);
         noPrintButn.setOnClickListener(new View.OnClickListener() {

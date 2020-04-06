@@ -189,11 +189,60 @@ public class OrderSqliteUtil {
         return 0;
     }
 
+    public Order  fetchByOrderID(String orderID) throws SQLException {
+        Cursor mCursor =
+                mDb.query(true, DATABASE_TABLE, new String[]{KEY_ID, KEY_ORDERID, KEY_CONAME, KEY_CONPHONE, KEY_PRONUM,
+                                KEY_SALARY, KEY_PAY, KEY_TIME, KEY_PRINT}, KEY_ORDERID + "=" + orderID, null,
+                        null, null, null, null);
+        List<Order> orders = new ArrayList<>();
+        //对游标 Cursor 的遍历
+        while (mCursor.moveToNext()) {
+            Order order = new Order();
+            order.setOrderID(mCursor.getString(1));
+            order.setConsumerName(mCursor.getString(2));
+            order.setConsumerPhone(mCursor.getString(3));
+            order.setProductNum(mCursor.getInt(4));
+            order.setSalary(mCursor.getDouble(5));
+            order.setHasPay(mCursor.getDouble(6));
+            order.setTime(mCursor.getString(7));
+            order.setIsPrint(mCursor.getInt(8));
+
+            orders.add(order);
+        }
+        mCursor.close();
+        return orders.get(0);
+    }
+
     public List<Order> fetchByisPrintAndDESC(int isPrint) throws SQLException{
         Cursor mCursor =
                 mDb.query(true, DATABASE_TABLE,
                         new String[]{KEY_ID, KEY_ORDERID, KEY_CONAME, KEY_CONPHONE, KEY_PRONUM, KEY_SALARY, KEY_PAY, KEY_TIME, KEY_PRINT},
-                        KEY_PRINT + "=" + isPrint, null,
+                        KEY_PRINT + " = ? or "+KEY_PRINT+" = ? ", new String[]{"1",""+isPrint},
+                        null, null, KEY_ID + " DESC", "50");
+        List<Order> orders = new ArrayList<>();
+        //对游标 Cursor 的遍历
+        while (mCursor.moveToNext()) {
+            Order order = new Order();
+            order.setOrderID(mCursor.getString(1));
+            order.setConsumerName(mCursor.getString(2));
+            order.setConsumerPhone(mCursor.getString(3));
+            order.setProductNum(mCursor.getInt(4));
+            order.setSalary(mCursor.getDouble(5));
+            order.setHasPay(mCursor.getDouble(6));
+            order.setTime(mCursor.getString(7));
+            order.setIsPrint(mCursor.getInt(8));
+
+            orders.add(order);
+        }
+        mCursor.close();
+        return orders;
+    }
+
+    public List<Order> fetchByisPrintDESCOnlyPrint(int isPrint) throws SQLException{
+        Cursor mCursor =
+                mDb.query(true, DATABASE_TABLE,
+                        new String[]{KEY_ID, KEY_ORDERID, KEY_CONAME, KEY_CONPHONE, KEY_PRONUM, KEY_SALARY, KEY_PAY, KEY_TIME, KEY_PRINT},
+                        KEY_PRINT + " = "+isPrint, null,
                         null, null, KEY_ID + " DESC", "50");
         List<Order> orders = new ArrayList<>();
         //对游标 Cursor 的遍历
@@ -225,7 +274,7 @@ public class OrderSqliteUtil {
         Cursor mCursor =
                 mDb.query(true, DATABASE_TABLE,
                         new String[]{KEY_ID, KEY_ORDERID, KEY_CONAME, KEY_CONPHONE, KEY_PRONUM, KEY_SALARY, KEY_PAY, KEY_TIME, KEY_PRINT},
-                        KEY_PRINT + "=" + isPrint, null,
+                        KEY_PRINT + " != "+isPrint, null,
                         null, null, KEY_ID, null);
         List<Order> orders = new ArrayList<>();
         //对游标 Cursor 的遍历

@@ -7,8 +7,9 @@
     android:orientation="vertical"
     android:paddingLeft="30dp">
 
+
     <LinearLayout
-        android:id="@+id/dataName"
+        android:id="@+id/dataCategory"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -17,7 +18,28 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="名称：">
+            android:text="类别:">
+
+        </TextView>
+
+        <Spinner
+            android:id="@+id/spinnerCategory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="200dp"
+            android:minHeight="36dp"></Spinner>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/dataName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="名称:">
 
         </TextView>
 
@@ -88,35 +110,13 @@
         </EditText>
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/dataAllNum"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="小计："></TextView>
-
-        <EditText
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:enabled="false"></EditText>
-    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/dataBut"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingLeft="40dp">
-
-        <Button
-            android:id="@+id/isCancel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="取消"></Button>
+        android:paddingLeft="60dp">
 
         <Button
             android:id="@+id/isOk"

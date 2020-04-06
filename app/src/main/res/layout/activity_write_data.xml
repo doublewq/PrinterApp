@@ -29,7 +29,9 @@
         android:id="@+id/linearPhone"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/linearTime">
+        android:layout_below="@id/linearTime"
+        android:focusable="true"
+        android:focusableInTouchMode="true">
 
         <TextView
             android:id="@+id/txtUser"
@@ -37,13 +39,12 @@
             android:layout_height="wrap_content"
             android:text="客户："></TextView>
 
-
         <EditText
             android:id="@+id/editUser"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:layout_toRightOf="@id/txtUser"
-            android:hint="输入姓名"></EditText>
+            android:hint="输入姓名或点击选择"></EditText>
 
     </LinearLayout>
 
@@ -62,22 +63,97 @@
         <EditText
             android:id="@+id/editPhone"
             android:layout_width="200dp"
+            android:maxLength="11"
             android:layout_height="wrap_content"
             android:layout_toRightOf="@id/txtPhone"
             android:inputType="number"></EditText>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/linearBeizhu"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/linearUser">
+
+        <TextView
+            android:id="@+id/txtBeizhu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="备注："></TextView>
+
+        <EditText
+            android:id="@+id/editBeizhu"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/txtBeizhu"></EditText>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/linearRadio"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/linearBeizhu">
+
+        <TextView
+            android:id="@+id/txtRadio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="支付："></TextView>
+
+        <EditText
+            android:id="@+id/editMoney"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/txtRadio"
+            android:hint="0.00"></EditText>
+
+        <RadioGroup
+            android:id="@+id/rg_horizontal_demo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rb_wx"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="false"
+                android:text="微信"
+                android:textColor="#000000" />
+
+            <RadioButton
+                android:id="@+id/rb_zfb"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="false"
+                android:text="支付宝"
+                android:textColor="#000000" />
+
+            <RadioButton
+                android:id="@+id/rb_xj"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="false"
+                android:text="现金"
+                android:textColor="#000000" />
+        </RadioGroup>
 
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/linearUser">
+        android:layout_below="@id/linearRadio"
+        android:layout_marginBottom="40dp">
 
         <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/scroll_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignBottom="@id/linearUser"
+            android:layout_alignBottom="@id/linearRadio"
             android:layout_alignParentTop="true"
             android:background="#F5F5F5"
             android:orientation="vertical">
@@ -131,23 +207,24 @@
         android:textSize="15sp">
 
         <Button
+            android:id="@+id/btn_zhanwei"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_green_selector"
+            android:text=""
+            android:textSize="15sp"
+            android:visibility="invisible" />
+
+        <Button
             android:id="@+id/btn_soonPrint"
             android:layout_width="wrap_content"
             android:layout_height="40dp"
             android:layout_alignParentBottom="true"
             android:layout_weight="1"
             android:background="@drawable/bg_green_selector"
-            android:text="稍后打印"
+            android:text="生成订单"
             android:textSize="15sp" />
 
-        <Button
-            android:id="@+id/btn_yes"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:layout_alignParentBottom="true"
-            android:layout_weight="1"
-            android:background="@drawable/bg_green_selector"
-            android:text="现在打印"
-            android:textSize="15sp" />
     </LinearLayout>
 </RelativeLayout>
